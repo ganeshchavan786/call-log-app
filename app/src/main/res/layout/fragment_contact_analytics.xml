@@ -1,0 +1,369 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingBottom="80dp">
+
+        <!-- ── Header ── -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="16dp"
+            android:paddingTop="16dp"
+            android:paddingBottom="12dp">
+
+            <!-- Back button -->
+            <ImageView
+                android:id="@+id/btn_back"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:src="@drawable/ic_arrow_back"
+                android:padding="6dp"
+                app:tint="?attr/colorOnSurface"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Back"
+                android:layout_marginEnd="12dp"/>
+
+            <!-- Avatar / Initials -->
+            <TextView
+                android:id="@+id/tv_avatar"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:gravity="center"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/white"
+                android:background="@drawable/bg_circle"
+                android:layout_marginEnd="14dp"/>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tv_contact_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="?attr/colorOnSurface"
+                    android:maxLines="1"
+                    android:ellipsize="end"/>
+
+                <TextView
+                    android:id="@+id/tv_contact_number"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="13sp"
+                    android:textColor="?attr/colorOnSurfaceVariant"/>
+            </LinearLayout>
+
+            <!-- Call button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_call"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:icon="@drawable/ic_phone"
+                android:text="Call"
+                android:textSize="13sp"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+        </LinearLayout>
+
+        <!-- ── Date Range Chips ── -->
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none"
+            android:paddingHorizontal="16dp"
+            android:layout_marginBottom="4dp">
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chip_group_range"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingVertical="4dp"
+                app:singleSelection="true"
+                app:selectionRequired="true">
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_all_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="All Time"
+                    android:checked="true"
+                    style="@style/Widget.MaterialComponents.Chip.Filter"/>
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_today"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Today"
+                    style="@style/Widget.MaterialComponents.Chip.Filter"/>
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_this_week"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="This Week"
+                    style="@style/Widget.MaterialComponents.Chip.Filter"/>
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_this_month"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="This Month"
+                    style="@style/Widget.MaterialComponents.Chip.Filter"/>
+
+            </com.google.android.material.chip.ChipGroup>
+        </HorizontalScrollView>
+
+        <!-- ── Donut Chart Card ── -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="12dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="0dp"
+            app:strokeWidth="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <!-- Chart -->
+                <com.github.mikephil.charting.charts.PieChart
+                    android:id="@+id/pie_chart"
+                    android:layout_width="match_parent"
+                    android:layout_height="220dp"/>
+
+                <!-- Legend row -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center"
+                    android:layout_marginTop="8dp">
+
+                    <!-- Incoming -->
+                    <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:gravity="center_vertical"
+                        android:layout_marginHorizontal="10dp">
+                        <View android:layout_width="10dp" android:layout_height="10dp"
+                            android:background="@color/color_incoming"
+                            android:layout_marginEnd="4dp"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="Incoming" android:textSize="11sp"
+                            android:textColor="?attr/colorOnSurfaceVariant"/>
+                    </LinearLayout>
+
+                    <!-- Outgoing -->
+                    <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:gravity="center_vertical"
+                        android:layout_marginHorizontal="10dp">
+                        <View android:layout_width="10dp" android:layout_height="10dp"
+                            android:background="@color/color_outgoing"
+                            android:layout_marginEnd="4dp"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="Outgoing" android:textSize="11sp"
+                            android:textColor="?attr/colorOnSurfaceVariant"/>
+                    </LinearLayout>
+
+                    <!-- Missed -->
+                    <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:gravity="center_vertical"
+                        android:layout_marginHorizontal="10dp">
+                        <View android:layout_width="10dp" android:layout_height="10dp"
+                            android:background="@color/color_missed"
+                            android:layout_marginEnd="4dp"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="Missed" android:textSize="11sp"
+                            android:textColor="?attr/colorOnSurfaceVariant"/>
+                    </LinearLayout>
+
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- ── Summary Table Card ── -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginBottom="12dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="0dp"
+            app:strokeWidth="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <!-- Table Header -->
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:layout_marginBottom="10dp">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="2" android:text="Type"
+                        android:textSize="12sp" android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurfaceVariant"/>
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="Calls"
+                        android:textSize="12sp" android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:gravity="center"/>
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="2" android:text="Duration"
+                        android:textSize="12sp" android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:gravity="end"/>
+                </LinearLayout>
+
+                <View android:layout_width="match_parent" android:layout_height="0.5dp"
+                    android:background="?attr/colorOutlineVariant" android:layout_marginBottom="10dp"/>
+
+                <!-- Incoming row -->
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:layout_marginBottom="12dp">
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="2" android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        <View android:layout_width="8dp" android:layout_height="8dp"
+                            android:background="@color/color_incoming"
+                            android:layout_marginEnd="8dp"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="Incoming" android:textSize="14sp"
+                            android:textColor="@color/color_incoming" android:textStyle="bold"/>
+                    </LinearLayout>
+                    <TextView android:id="@+id/tv_incoming_count"
+                        android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="0"
+                        android:textSize="14sp" android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface" android:gravity="center"/>
+                    <TextView android:id="@+id/tv_incoming_duration"
+                        android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="2" android:text="—"
+                        android:textSize="13sp" android:textColor="?attr/colorOnSurfaceVariant"
+                        android:gravity="end"/>
+                </LinearLayout>
+
+                <!-- Outgoing row -->
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:layout_marginBottom="12dp">
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="2" android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        <View android:layout_width="8dp" android:layout_height="8dp"
+                            android:background="@color/color_outgoing"
+                            android:layout_marginEnd="8dp"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="Outgoing" android:textSize="14sp"
+                            android:textColor="@color/color_outgoing" android:textStyle="bold"/>
+                    </LinearLayout>
+                    <TextView android:id="@+id/tv_outgoing_count"
+                        android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="0"
+                        android:textSize="14sp" android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface" android:gravity="center"/>
+                    <TextView android:id="@+id/tv_outgoing_duration"
+                        android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="2" android:text="—"
+                        android:textSize="13sp" android:textColor="?attr/colorOnSurfaceVariant"
+                        android:gravity="end"/>
+                </LinearLayout>
+
+                <!-- Missed row -->
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:layout_marginBottom="12dp">
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="2" android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        <View android:layout_width="8dp" android:layout_height="8dp"
+                            android:background="@color/color_missed"
+                            android:layout_marginEnd="8dp"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="Missed" android:textSize="14sp"
+                            android:textColor="@color/color_missed" android:textStyle="bold"/>
+                    </LinearLayout>
+                    <TextView android:id="@+id/tv_missed_count"
+                        android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="0"
+                        android:textSize="14sp" android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface" android:gravity="center"/>
+                    <TextView android:id="@+id/tv_missed_duration"
+                        android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="2" android:text="—"
+                        android:textSize="13sp" android:textColor="?attr/colorOnSurfaceVariant"
+                        android:gravity="end"/>
+                </LinearLayout>
+
+                <!-- Rejected row -->
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:layout_marginBottom="12dp">
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="2" android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        <View android:layout_width="8dp" android:layout_height="8dp"
+                            android:background="@color/color_unknown"
+                            android:layout_marginEnd="8dp"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="Rejected" android:textSize="14sp"
+                            android:textColor="@color/color_unknown" android:textStyle="bold"/>
+                    </LinearLayout>
+                    <TextView android:id="@+id/tv_rejected_count"
+                        android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="0"
+                        android:textSize="14sp" android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface" android:gravity="center"/>
+                    <TextView android:id="@+id/tv_rejected_duration"
+                        android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="2" android:text="—"
+                        android:textSize="13sp" android:textColor="?attr/colorOnSurfaceVariant"
+                        android:gravity="end"/>
+                </LinearLayout>
+
+                <!-- Divider -->
+                <View android:layout_width="match_parent" android:layout_height="0.5dp"
+                    android:background="?attr/colorOutlineVariant" android:layout_marginBottom="10dp"/>
+
+                <!-- Total row -->
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="2" android:text="Total"
+                        android:textSize="15sp" android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface"/>
+                    <TextView android:id="@+id/tv_total_count"
+                        android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="0"
+                        android:textSize="15sp" android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface" android:gravity="center"/>
+                    <TextView android:id="@+id/tv_total_duration"
+                        android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="2" android:text="—"
+                        android:textSize="14sp" android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface" android:gravity="end"/>
+                </LinearLayout>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

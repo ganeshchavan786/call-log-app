@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!--
+        Safe zone: center 72x72dp (18dp margin on each side)
+        Phone icon centered in safe zone
+    -->
+
+    <!-- Outer soft circle glow -->
+    <path
+        android:fillColor="#33FFFFFF"
+        android:pathData="M54,54 m-30,0 a30,30 0 1,0 60,0 a30,30 0 1,0 -60,0"/>
+
+    <!-- Inner white circle -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,54 m-22,0 a22,22 0 1,0 44,0 a22,22 0 1,0 -44,0"/>
+
+    <!-- Phone handset icon (purple, centered at 54,54) -->
+    <!-- Scale: original 24x24 → 26x26, offset to center: (54-13)=41 -->
+    <path
+        android:fillColor="#7B1FA2"
+        android:pathData="
+        M47.38,50.79
+        c1.44,2.83 3.76,5.14 6.59,6.59
+        l2.2,-2.2
+        c0.27,-0.27 0.67,-0.36 1.02,-0.24
+        c1.12,0.37 2.33,0.57 3.57,0.57
+        c0.55,0 1,0.45 1,1
+        V60
+        c0,0.55 -0.45,1 -1,1
+        c-9.39,0 -17,-7.61 -17,-17
+        c0,-0.55 0.45,-1 1,-1
+        h3.5
+        c0.55,0 1,0.45 1,1
+        c0,1.25 0.2,2.45 0.57,3.57
+        c0.11,0.35 0.03,0.74 -0.25,1.02
+        l-2.2,2.2z"/>
+
+</vector>

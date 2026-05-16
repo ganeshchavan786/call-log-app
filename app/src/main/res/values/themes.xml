@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.CallLog" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/purple_600</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorPrimaryContainer">@color/purple_100</item>
+        <item name="colorSecondary">@color/teal_700</item>
+        <item name="colorTertiary">@color/color_incoming</item>
+        <item name="android:statusBarColor">?attr/colorPrimary</item>
+    </style>
+
+    <!-- Splash Screen theme -->
+    <style name="Theme.CallLog.Splash" parent="Theme.CallLog">
+        <item name="android:windowBackground">@color/purple_600</item>
+    </style>
+
+</resources>

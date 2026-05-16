@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:id="@+id/dashboardFragment"
+        android:icon="@drawable/ic_dashboard"
+        android:title="Dashboard"/>
+
+    <item android:id="@+id/callLogFragment"
+        android:icon="@drawable/ic_call_log"
+        android:title="Calls"/>
+
+    <item android:id="@+id/exportFragment"
+        android:icon="@drawable/ic_export"
+        android:title="Export"/>
+
+    <item android:id="@+id/settingsFragment"
+        android:icon="@drawable/ic_settings"
+        android:title="Settings"/>
+
+</menu>
