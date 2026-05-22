@@ -6,13 +6,13 @@ import com.calllog.app.util.NotificationHelper
 import com.calllog.app.worker.CallLogSyncWorker
 import com.calllog.app.worker.DailySummaryWorker
 import timber.log.Timber
+import java.util.concurrent.TimeUnit
 
 class CallLogApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
 
-        // Timber — debug build मध्ये full logging, release मध्ये silent
         if (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0) {
             Timber.plant(Timber.DebugTree())
         }
@@ -20,25 +20,61 @@ class CallLogApplication : Application() {
         Timber.i("Application started — Smart Call Log")
 
         NotificationHelper.createNotificationChannels(this)
-        scheduleInitialSync()
+
+        // App start झाल्यावर लगेच एकदा sync
+        scheduleImmediateSync()
+
+        // दर 30 मिनिटांनी auto sync (background)
+        schedulePeriodicSync()
+
         DailySummaryWorker.schedule(this)
     }
 
-    private fun scheduleInitialSync() {
-        Timber.d("Scheduling initial call log sync...")
+    /**
+     * App open झाल्यावर लगेच sync — नवीन calls असतील तर server ला जातात
+     */
+    private fun scheduleImmediateSync() {
+        Timber.d("Scheduling immediate sync on app start...")
 
         val request = OneTimeWorkRequestBuilder<CallLogSyncWorker>()
             .setConstraints(
                 Constraints.Builder()
-                    .setRequiredNetworkType(NetworkType.NOT_REQUIRED)
+                    .setRequiredNetworkType(NetworkType.CONNECTED) // Internet असेल तरच
                     .build()
             )
-            .addTag("initial_sync")
+            .addTag("immediate_sync")
             .build()
 
+        // REPLACE — app restart झाला तरी fresh sync होतो
         WorkManager.getInstance(this).enqueueUniqueWork(
-            "initial_call_log_sync",
-            ExistingWorkPolicy.KEEP,
+            "immediate_sync_on_start",
+            ExistingWorkPolicy.REPLACE,
+            request
+        )
+    }
+
+    /**
+     * दर 30 मिनिटांनी background auto sync
+     * WorkManager minimum interval = 15 min, आपण 30 min ठेवतो
+     */
+    private fun schedulePeriodicSync() {
+        Timber.d("Scheduling periodic auto sync every 15 minutes...")
+
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED) // Internet असेल तरच
+            .build()
+
+        val request = PeriodicWorkRequestBuilder<CallLogSyncWorker>(
+            15, TimeUnit.MINUTES  // दर 15 मिनिटांनी
+        )
+            .setConstraints(constraints)
+            .addTag("periodic_sync")
+            .build()
+
+        // REPLACE — already scheduled असेल तर नवीन schedule घेईल
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "periodic_call_log_sync",
+            ExistingPeriodicWorkPolicy.REPLACE,
             request
         )
     }

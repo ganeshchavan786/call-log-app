@@ -153,16 +153,78 @@ class DashboardFragment : Fragment() {
         binding.btnSyncNow.setOnClickListener {
             val request = OneTimeWorkRequestBuilder<CallLogSyncWorker>()
                 .setInitialDelay(1, TimeUnit.SECONDS)
+                .setInputData(
+                    androidx.work.workDataOf(CallLogSyncWorker.KEY_IS_MANUAL to true)
+                )
                 .addTag("manual_sync")
                 .build()
 
-            WorkManager.getInstance(requireContext()).enqueueUniqueWork(
+            val workManager = WorkManager.getInstance(requireContext())
+
+            workManager.enqueueUniqueWork(
                 "manual_call_log_sync",
                 ExistingWorkPolicy.REPLACE,
                 request
             )
 
-            Toast.makeText(requireContext(), "Syncing call logs...", Toast.LENGTH_SHORT).show()
+            // Button disable करतो sync दरम्यान
+            binding.btnSyncNow.isEnabled = false
+            binding.btnSyncNow.text = "Syncing..."
+
+            // WorkManager observe करतो — result UI ला दाखवतो
+            workManager.getWorkInfoByIdLiveData(request.id)
+                .observe(viewLifecycleOwner) { workInfo ->
+                    if (workInfo == null) return@observe
+
+                    when (workInfo.state) {
+                        WorkInfo.State.RUNNING -> {
+                            val progress = workInfo.progress
+                            val message = progress.getString(CallLogSyncWorker.KEY_MESSAGE)
+                            if (!message.isNullOrEmpty()) {
+                                binding.btnSyncNow.text = "Syncing..."
+                            }
+                        }
+                        WorkInfo.State.SUCCEEDED -> {
+                            binding.btnSyncNow.isEnabled = true
+                            binding.btnSyncNow.text = "SYNC"
+                            val output  = workInfo.outputData
+                            val status  = output.getString(CallLogSyncWorker.KEY_STATUS) ?: "success"
+                            val synced  = output.getInt(CallLogSyncWorker.KEY_SYNCED, 0)
+
+                            val toastMsg = when (status) {
+                                "up_to_date" -> "✅ Already up to date"
+                                "success"    -> "✅ Synced $synced records"
+                                else         -> "✅ Sync complete"
+                            }
+                            Toast.makeText(requireContext(), toastMsg, Toast.LENGTH_LONG).show()
+                        }
+                        WorkInfo.State.FAILED -> {
+                            binding.btnSyncNow.isEnabled = true
+                            binding.btnSyncNow.text = "SYNC"
+                            val output  = workInfo.outputData
+                            val status  = output.getString(CallLogSyncWorker.KEY_STATUS) ?: "error"
+                            val message = output.getString(CallLogSyncWorker.KEY_MESSAGE)
+
+                            val toastMsg = when (status) {
+                                "server_down" ->
+                                    "⚠️ Server unavailable\nCalls saved locally — will sync when server is back"
+                                "auth_error"  ->
+                                    "🔒 Session expired — please sign out and login again"
+                                "partial"     ->
+                                    "⚠️ Partial sync — will retry remaining records"
+                                else          ->
+                                    if (!message.isNullOrEmpty()) "❌ Sync failed: $message"
+                                    else "❌ Sync failed — check your connection"
+                            }
+                            Toast.makeText(requireContext(), toastMsg, Toast.LENGTH_LONG).show()
+                        }
+                        WorkInfo.State.CANCELLED -> {
+                            binding.btnSyncNow.isEnabled = true
+                            binding.btnSyncNow.text = "SYNC"
+                        }
+                        else -> { /* ENQUEUED, BLOCKED — wait */ }
+                    }
+                }
         }
     }
 

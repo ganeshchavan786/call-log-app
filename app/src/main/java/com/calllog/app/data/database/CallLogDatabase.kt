@@ -15,7 +15,7 @@ import com.calllog.app.data.model.SimInfo
  */
 @Database(
     entities = [CallLog::class, SimInfo::class],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -33,9 +33,9 @@ abstract class CallLogDatabase : RoomDatabase() {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     CallLogDatabase::class.java,
-                    "call_log_database" // DB file name
+                    "call_log_database"
                 )
-                    .fallbackToDestructiveMigration() // Facilitates development migrations
+                    .fallbackToDestructiveMigration() // Dev मध्ये OK — schema change handle करतो
                     .build()
                 INSTANCE = instance
                 instance

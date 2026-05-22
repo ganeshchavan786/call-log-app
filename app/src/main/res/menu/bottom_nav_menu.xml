@@ -9,6 +9,10 @@
         android:icon="@drawable/ic_call_log"
         android:title="Calls"/>
 
+    <item android:id="@+id/overallAnalyticsFragment"
+        android:icon="@drawable/ic_analytics"
+        android:title="Analytics"/>
+
     <item android:id="@+id/exportFragment"
         android:icon="@drawable/ic_export"
         android:title="Export"/>

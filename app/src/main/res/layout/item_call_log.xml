@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:paddingHorizontal="12dp"
-    android:paddingVertical="3dp">
+    android:paddingVertical="2dp">
 
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/card_call_item"
@@ -21,56 +21,166 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingHorizontal="14dp"
-            android:paddingVertical="10dp">
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="8dp">
 
             <!-- ── Left: Avatar (Initials or Call Icon) ── -->
             <FrameLayout
                 android:id="@+id/fl_avatar"
-                android:layout_width="46dp"
-                android:layout_height="46dp"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent">
 
-                <!-- Initials circle (contact name असेल तर) -->
                 <TextView
                     android:id="@+id/tv_initials"
-                    android:layout_width="46dp"
-                    android:layout_height="46dp"
+                    android:layout_width="42dp"
+                    android:layout_height="42dp"
                     android:gravity="center"
-                    android:textSize="16sp"
+                    android:textSize="15sp"
                     android:textStyle="bold"
                     android:textColor="@color/white"
                     android:background="@drawable/bg_circle"
                     android:visibility="gone"/>
 
-                <!-- Call type icon (Unknown number) -->
                 <ImageView
                     android:id="@+id/iv_call_type"
-                    android:layout_width="46dp"
-                    android:layout_height="46dp"
-                    android:padding="11dp"
+                    android:layout_width="42dp"
+                    android:layout_height="42dp"
+                    android:padding="10dp"
                     android:background="@drawable/bg_circle"
                     android:contentDescription="Call type"
                     android:visibility="visible"/>
 
             </FrameLayout>
 
+            <!-- ── Right section: SIM badge + 2x2 action buttons ── -->
+            <LinearLayout
+                android:id="@+id/ll_right"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:layout_marginStart="6dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent">
+
+                <!-- SIM Badge -->
+                <TextView
+                    android:id="@+id/tv_sim"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_sim_badge"
+                    android:paddingHorizontal="7dp"
+                    android:paddingVertical="2dp"
+                    android:textSize="9sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/white"
+                    android:layout_marginBottom="3dp"/>
+
+                <!-- Row 1: WhatsApp + Call -->
+                <LinearLayout
+                    android:id="@+id/ll_actions"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <ImageView
+                        android:id="@+id/btn_whatsapp"
+                        android:layout_width="26dp"
+                        android:layout_height="26dp"
+                        android:src="@drawable/ic_whatsapp"
+                        android:padding="2dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:contentDescription="WhatsApp"/>
+
+                    <ImageView
+                        android:id="@+id/btn_call"
+                        android:layout_width="26dp"
+                        android:layout_height="26dp"
+                        android:src="@drawable/ic_phone"
+                        app:tint="?attr/colorPrimary"
+                        android:padding="2dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:contentDescription="Call"
+                        android:layout_marginStart="2dp"/>
+
+                </LinearLayout>
+
+                <!-- Row 2: SMS + Add Contact -->
+                <LinearLayout
+                    android:id="@+id/ll_actions2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="2dp">
+
+                    <ImageView
+                        android:id="@+id/btn_sms"
+                        android:layout_width="26dp"
+                        android:layout_height="26dp"
+                        android:src="@drawable/ic_sms"
+                        app:tint="#FF9800"
+                        android:padding="2dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:contentDescription="SMS"/>
+
+                    <ImageView
+                        android:id="@+id/btn_add_contact"
+                        android:layout_width="26dp"
+                        android:layout_height="26dp"
+                        android:src="@drawable/ic_person_add"
+                        app:tint="#00BCD4"
+                        android:padding="2dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:contentDescription="Add Contact"
+                        android:layout_marginStart="2dp"
+                        android:visibility="gone"/>
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- ── Deleted badge ── -->
+            <ImageView
+                android:id="@+id/iv_deleted_badge"
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:src="@drawable/ic_call_unknown"
+                android:contentDescription="Deleted from phone"
+                android:visibility="gone"
+                app:tint="#FF9800"
+                app:layout_constraintEnd_toStartOf="@id/ll_right"
+                app:layout_constraintBottom_toBottomOf="parent"
+                android:layout_marginEnd="4dp"
+                android:layout_marginBottom="4dp"/>
+
             <!-- ── Contact Name ── -->
             <TextView
                 android:id="@+id/tv_name"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:layout_marginEnd="8dp"
-                android:textSize="15sp"
+                android:layout_marginStart="10dp"
+                android:layout_marginEnd="6dp"
+                android:textSize="14sp"
                 android:textStyle="bold"
                 android:textColor="?attr/colorOnSurface"
                 android:maxLines="1"
                 android:ellipsize="end"
                 app:layout_constraintStart_toEndOf="@id/fl_avatar"
-                app:layout_constraintEnd_toStartOf="@id/tv_sim"
+                app:layout_constraintEnd_toStartOf="@id/ll_right"
                 app:layout_constraintTop_toTopOf="parent"/>
 
             <!-- ── Phone Number ── -->
@@ -78,13 +188,14 @@
                 android:id="@+id/tv_number"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:layout_marginEnd="8dp"
-                android:textSize="12sp"
+                android:layout_marginStart="10dp"
+                android:layout_marginEnd="6dp"
+                android:textSize="11sp"
                 android:textColor="?attr/colorOnSurfaceVariant"
                 android:maxLines="1"
+                android:ellipsize="end"
                 app:layout_constraintStart_toEndOf="@id/fl_avatar"
-                app:layout_constraintEnd_toStartOf="@id/tv_sim"
+                app:layout_constraintEnd_toStartOf="@id/ll_right"
                 app:layout_constraintTop_toBottomOf="@id/tv_name"/>
 
             <!-- ── Call Type Label + Time + Duration ── -->
@@ -92,17 +203,16 @@
                 android:id="@+id/ll_meta"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:layout_marginEnd="8dp"
-                android:layout_marginTop="3dp"
+                android:layout_marginStart="10dp"
+                android:layout_marginEnd="6dp"
+                android:layout_marginTop="2dp"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
                 app:layout_constraintStart_toEndOf="@id/fl_avatar"
-                app:layout_constraintEnd_toStartOf="@id/tv_sim"
+                app:layout_constraintEnd_toStartOf="@id/ll_right"
                 app:layout_constraintTop_toBottomOf="@id/tv_number"
                 app:layout_constraintBottom_toBottomOf="parent">
 
-                <!-- Call type label — colored -->
                 <TextView
                     android:id="@+id/tv_call_type_label"
                     android:layout_width="wrap_content"
@@ -110,7 +220,6 @@
                     android:textSize="11sp"
                     android:textStyle="bold"/>
 
-                <!-- Separator -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -118,7 +227,6 @@
                     android:textSize="11sp"
                     android:textColor="?attr/colorOnSurfaceVariant"/>
 
-                <!-- Time -->
                 <TextView
                     android:id="@+id/tv_date"
                     android:layout_width="wrap_content"
@@ -126,7 +234,6 @@
                     android:textSize="11sp"
                     android:textColor="?attr/colorOnSurfaceVariant"/>
 
-                <!-- Separator -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -134,42 +241,18 @@
                     android:textSize="11sp"
                     android:textColor="?attr/colorOnSurfaceVariant"/>
 
-                <!-- Duration -->
                 <TextView
                     android:id="@+id/tv_duration"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:textSize="11sp"
                     android:textColor="?attr/colorPrimary"
-                    android:textStyle="bold"/>
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    android:ellipsize="end"/>
 
             </LinearLayout>
-
-            <!-- ── SIM Badge (top-right) ── -->
-            <TextView
-                android:id="@+id/tv_sim"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="@drawable/bg_sim_badge"
-                android:paddingHorizontal="8dp"
-                android:paddingVertical="3dp"
-                android:textSize="10sp"
-                android:textStyle="bold"
-                android:textColor="@color/white"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent"/>
-
-            <!-- ── Deleted badge (bottom-right) ── -->
-            <ImageView
-                android:id="@+id/iv_deleted_badge"
-                android:layout_width="14dp"
-                android:layout_height="14dp"
-                android:src="@drawable/ic_call_unknown"
-                android:contentDescription="Deleted from phone"
-                android:visibility="gone"
-                app:tint="#FF9800"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintBottom_toBottomOf="parent"/>
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 

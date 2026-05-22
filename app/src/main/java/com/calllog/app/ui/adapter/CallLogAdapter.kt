@@ -1,7 +1,9 @@
 package com.calllog.app.ui.adapter
 
+import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Color
+import android.net.Uri
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.style.BackgroundColorSpan
@@ -10,6 +12,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.recyclerview.widget.DiffUtil
@@ -178,6 +181,47 @@ class CallLogAdapter(
             binding.cardCallItem.alpha = if (callLog.isDeletedFromPhone) 0.65f else 1.0f
 
             binding.cardCallItem.setOnClickListener { onClick(callLog) }
+
+            // ── Call Button ──────────────────────────────────────────────────
+            binding.btnCall.setOnClickListener {
+                val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${callLog.phoneNumber}"))
+                ctx.startActivity(intent)
+            }
+
+            // ── WhatsApp Button ──────────────────────────────────────────────
+            binding.btnWhatsapp.setOnClickListener {
+                var cleaned = callLog.phoneNumber.replace(Regex("[^0-9]"), "")
+                if (cleaned.length == 10) cleaned = "91$cleaned"
+                val waIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/$cleaned")).apply {
+                    setPackage("com.whatsapp")
+                }
+                try {
+                    ctx.startActivity(waIntent)
+                } catch (e: Exception) {
+                    // WhatsApp नाही → browser मध्ये उघड
+                    ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/$cleaned")))
+                }
+            }
+
+            // ── SMS Button ───────────────────────────────────────────────────
+            binding.btnSms.setOnClickListener {
+                val smsIntent = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:${callLog.phoneNumber}"))
+                ctx.startActivity(smsIntent)
+            }
+
+            // ── Add Contact Button ────────────────────────────────────────────
+            if (hasName) {
+                binding.btnAddContact.visibility = View.GONE
+            } else {
+                binding.btnAddContact.visibility = View.VISIBLE
+                binding.btnAddContact.setOnClickListener {
+                    val contactIntent = Intent(Intent.ACTION_INSERT).apply {
+                        type = android.provider.ContactsContract.RawContacts.CONTENT_TYPE
+                        putExtra(android.provider.ContactsContract.Intents.Insert.PHONE, callLog.phoneNumber)
+                    }
+                    ctx.startActivity(contactIntent)
+                }
+            }
         }
 
         // ── Helpers ──────────────────────────────────────────────────────────

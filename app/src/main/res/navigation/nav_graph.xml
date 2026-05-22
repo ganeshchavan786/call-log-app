@@ -19,6 +19,25 @@
             app:exitAnim="@anim/slide_out_left"
             app:popEnterAnim="@anim/slide_in_left"
             app:popExitAnim="@anim/slide_out_right"/>
+        <action
+            android:id="@+id/action_callLog_to_overallAnalytics"
+            app:destination="@id/overallAnalyticsFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right"/>
+    </fragment>
+
+    <fragment android:id="@+id/overallAnalyticsFragment"
+        android:name="com.calllog.app.ui.fragment.OverallAnalyticsFragment"
+        android:label="Analytics">
+        <action
+            android:id="@+id/action_overallAnalytics_to_contactAnalytics"
+            app:destination="@id/contactAnalyticsFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right"/>
     </fragment>
 
     <fragment android:id="@+id/contactAnalyticsFragment"

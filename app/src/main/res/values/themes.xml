@@ -15,4 +15,17 @@
         <item name="android:windowBackground">@color/purple_600</item>
     </style>
 
+    <!-- Bottom Sheet Dialog styling -->
+    <style name="ThemeOverlay_App_BottomSheetDialog" parent="ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/Widget_App_BottomSheet_Modal</item>
+    </style>
+    <style name="Widget_App_BottomSheet_Modal" parent="Widget.Material3.BottomSheet.Modal">
+        <item name="shapeAppearanceOverlay">@style/ShapeAppearanceOverlay_App_BottomSheet</item>
+    </style>
+    <style name="ShapeAppearanceOverlay_App_BottomSheet" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">16dp</item>
+        <item name="cornerSizeTopRight">16dp</item>
+    </style>
+
 </resources>

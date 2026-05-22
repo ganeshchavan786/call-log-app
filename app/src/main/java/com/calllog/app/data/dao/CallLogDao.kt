@@ -51,6 +51,39 @@ interface CallLogDao {
     @Query("SELECT * FROM call_logs WHERE phoneNumber = :number AND callDate = :date LIMIT 1")
     suspend fun findCallByNumberAndDate(number: String, date: Long): CallLog?
 
+    // Bulk check — existing callDates fetch करतो (69k individual queries टाळतो)
+    // Worker मध्ये phone records filter करायला वापरतो
+    @Query("SELECT callDate FROM call_logs WHERE callDate IN (:dates)")
+    suspend fun getExistingCallDates(dates: List<Long>): List<Long>
+
+    // ── Overall Analytics ────────────────────────────────────────────────────
+    @Query("SELECT COUNT(*) FROM call_logs WHERE callDate BETWEEN :from AND :to")
+    suspend fun getTotalCallsInRange(from: Long, to: Long): Int
+
+    @Query("SELECT COUNT(*) FROM call_logs WHERE callType = 'INCOMING' AND callDate BETWEEN :from AND :to")
+    suspend fun getIncomingCountInRange(from: Long, to: Long): Int
+
+    @Query("SELECT COUNT(*) FROM call_logs WHERE callType = 'OUTGOING' AND callDate BETWEEN :from AND :to")
+    suspend fun getOutgoingCountInRange(from: Long, to: Long): Int
+
+    @Query("SELECT COUNT(*) FROM call_logs WHERE callType = 'MISSED' AND callDate BETWEEN :from AND :to")
+    suspend fun getMissedCountInRange(from: Long, to: Long): Int
+
+    @Query("SELECT COUNT(*) FROM call_logs WHERE callType = 'REJECTED' AND callDate BETWEEN :from AND :to")
+    suspend fun getRejectedCountInRange(from: Long, to: Long): Int
+
+    @Query("SELECT COUNT(DISTINCT phoneNumber) FROM call_logs WHERE callDate BETWEEN :from AND :to")
+    suspend fun getUniqueNumbersCountInRange(from: Long, to: Long): Int
+
+    @Query("SELECT COALESCE(SUM(duration), 0) FROM call_logs WHERE callDate BETWEEN :from AND :to")
+    suspend fun getTotalDurationInRange(from: Long, to: Long): Long
+
+    @Query("SELECT COALESCE(SUM(duration), 0) FROM call_logs WHERE callType = 'INCOMING' AND callDate BETWEEN :from AND :to")
+    suspend fun getIncomingDurationInRange(from: Long, to: Long): Long
+
+    @Query("SELECT COALESCE(SUM(duration), 0) FROM call_logs WHERE callType = 'OUTGOING' AND callDate BETWEEN :from AND :to")
+    suspend fun getOutgoingDurationInRange(from: Long, to: Long): Long
+
     // Mark a call log entry as deleted from the phone
     @Query("UPDATE call_logs SET isDeletedFromPhone = 1 WHERE phoneNumber = :number AND callDate = :date")
     suspend fun markAsDeletedFromPhone(number: String, date: Long)

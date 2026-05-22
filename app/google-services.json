@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "380585260938",
+    "project_id": "smartcalllog",
+    "storage_bucket": "smartcalllog.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:380585260938:android:4ee750018e9938697e3a73",
+        "android_client_info": {
+          "package_name": "com.calllog.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDvh0gkG96oBQXaDY3YB9Qq1a3U-nrXtwc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

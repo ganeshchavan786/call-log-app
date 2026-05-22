@@ -87,6 +87,7 @@ class CallLogFragment : Fragment() {
         ).attachToRecyclerView(binding.rvCallLogs)
     }
 
+
     // ── Sort ─────────────────────────────────────────────────────────────────
     private fun setupSortButton() {
         binding.btnSort.setOnClickListener { view ->

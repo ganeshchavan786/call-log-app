@@ -8,6 +8,7 @@
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.PROCESS_OUTGOING_CALLS" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
@@ -28,6 +29,8 @@
             </intent-filter>
         </activity>
 
+        <activity android:name=".ui.LoginActivity" android:exported="false"/>
+        <activity android:name=".ui.SimSetupActivity" android:exported="false"/>
         <activity android:name=".ui.MainActivity" android:exported="true" />
 
         <!-- Call detect करणे -->
