@@ -13,10 +13,6 @@
         android:icon="@drawable/ic_analytics"
         android:title="Analytics"/>
 
-    <item android:id="@+id/exportFragment"
-        android:icon="@drawable/ic_export"
-        android:title="Export"/>
-
     <item android:id="@+id/settingsFragment"
         android:icon="@drawable/ic_settings"
         android:title="Settings"/>

@@ -12,7 +12,6 @@ data class SimInfo(
     val phoneNumber: String = "",
     val countryIso: String = "",
     val networkType: String = "",
-    val imei: String = "",
     val isActive: Boolean = true,
     val updatedAt: Long = System.currentTimeMillis()
 )

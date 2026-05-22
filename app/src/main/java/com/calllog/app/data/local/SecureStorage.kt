@@ -97,6 +97,10 @@ class SecureStorage(context: Context) {
         prefs.edit().putBoolean("sim2_registered", registered).apply()
     fun isSim2Registered(): Boolean = prefs.getBoolean("sim2_registered", false)
 
+    // ── UI Preferences ────────────────────────────────────────────────────────
+    fun saveDarkMode(enabled: Boolean) = prefs.edit().putBoolean("dark_mode", enabled).apply()
+    fun isDarkMode(): Boolean = prefs.getBoolean("dark_mode", false)
+
     // ── Auth Check ────────────────────────────────────────────────────────────
     fun isLoggedIn(): Boolean = getToken() != null
 

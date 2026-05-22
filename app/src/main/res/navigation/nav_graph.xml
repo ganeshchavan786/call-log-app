@@ -44,10 +44,6 @@
         android:name="com.calllog.app.ui.fragment.ContactAnalyticsFragment"
         android:label="Contact Analytics"/>
 
-    <fragment android:id="@+id/exportFragment"
-        android:name="com.calllog.app.ui.fragment.ExportFragment"
-        android:label="Export"/>
-
     <fragment android:id="@+id/settingsFragment"
         android:name="com.calllog.app.ui.fragment.SettingsFragment"
         android:label="Settings"/>

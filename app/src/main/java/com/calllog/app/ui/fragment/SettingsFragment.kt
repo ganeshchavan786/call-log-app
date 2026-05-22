@@ -59,9 +59,11 @@ class SettingsFragment : Fragment() {
 
     // ── Dark Mode ─────────────────────────────────────────────────────────────
     private fun setupDarkMode() {
-        val isNight = AppCompatDelegate.getDefaultNightMode() == AppCompatDelegate.MODE_NIGHT_YES
+        val storage = SecureStorage(requireContext())
+        val isNight = storage.isDarkMode()
         binding.switchDarkMode.isChecked = isNight
         binding.switchDarkMode.setOnCheckedChangeListener { _, checked ->
+            storage.saveDarkMode(checked)
             AppCompatDelegate.setDefaultNightMode(
                 if (checked) AppCompatDelegate.MODE_NIGHT_YES
                 else         AppCompatDelegate.MODE_NIGHT_NO
@@ -265,18 +267,6 @@ class SettingsFragment : Fragment() {
 
     // ── SIM Section ───────────────────────────────────────────────────────────
     private fun setupSimSection() {
-        binding.layoutSimDetailsContent.visibility = View.GONE
-        binding.cardSimDetailsToggle.setOnClickListener {
-            val isVisible = binding.layoutSimDetailsContent.visibility == View.VISIBLE
-            if (isVisible) {
-                binding.layoutSimDetailsContent.visibility = View.GONE
-                binding.ivSimArrow.rotation = -90f
-            } else {
-                binding.layoutSimDetailsContent.visibility = View.VISIBLE
-                binding.ivSimArrow.rotation = 90f
-                simViewModel.refreshSimDetails()
-            }
-        }
         binding.btnRefreshSim.setOnClickListener { simViewModel.refreshSimDetails() }
         viewLifecycleOwner.lifecycleScope.launch {
             simViewModel.simList.collect { sims -> bindSimCards(sims) }
@@ -291,9 +281,6 @@ class SettingsFragment : Fragment() {
             binding.cardSim1.visibility = View.VISIBLE
             binding.tvSim1Operator.text = sim1.operatorName.ifEmpty { "Unknown Operator" }
             binding.tvSim1Number.text   = sim1.phoneNumber.ifEmpty { "Number not available" }
-            binding.tvSim1Network.text  = sim1.networkType.ifEmpty { "—" }
-            binding.tvSim1Country.text  = sim1.countryIso.uppercase().ifEmpty { "—" }
-            binding.tvSim1Imei.text     = sim1.imei.ifEmpty { "Not available" }
             updateSim1RegStatus(storage, sim1)
         } else {
             binding.cardSim1.visibility = View.GONE
@@ -304,9 +291,6 @@ class SettingsFragment : Fragment() {
             binding.cardSim2.visibility = View.VISIBLE
             binding.tvSim2Operator.text = sim2.operatorName.ifEmpty { "Unknown Operator" }
             binding.tvSim2Number.text   = sim2.phoneNumber.ifEmpty { "Number not available" }
-            binding.tvSim2Network.text  = sim2.networkType.ifEmpty { "—" }
-            binding.tvSim2Country.text  = sim2.countryIso.uppercase().ifEmpty { "—" }
-            binding.tvSim2Imei.text     = sim2.imei.ifEmpty { "Not available" }
             updateSim2RegStatus(storage, sim2)
         } else {
             binding.cardSim2.visibility = View.GONE

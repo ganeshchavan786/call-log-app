@@ -21,6 +21,13 @@ class CallLogApplication : Application() {
 
         NotificationHelper.createNotificationChannels(this)
 
+        // Apply Dark Mode Preference
+        val storage = com.calllog.app.data.local.SecureStorage(this)
+        androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(
+            if (storage.isDarkMode()) androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
+            else androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO
+        )
+
         // App start झाल्यावर लगेच एकदा sync
         scheduleImmediateSync()
 

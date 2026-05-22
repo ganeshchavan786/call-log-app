@@ -51,16 +51,6 @@ object SimDetailsManager {
                     else -> "Unknown"
                 }
 
-                // IMEI — Android 10+ वर restricted आहे
-                val imei = try {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        tm.getImei(sub.simSlotIndex) ?: ""
-                    } else {
-                        @Suppress("DEPRECATION")
-                        tm.deviceId ?: ""
-                    }
-                } catch (e: Exception) { "" }
-
                 simList.add(
                     SimInfo(
                         slotIndex    = sub.simSlotIndex,
@@ -68,7 +58,6 @@ object SimDetailsManager {
                         phoneNumber  = sub.number ?: "",
                         countryIso   = sub.countryIso ?: "",
                         networkType  = networkType,
-                        imei         = imei,
                         isActive     = true
                     )
                 )
