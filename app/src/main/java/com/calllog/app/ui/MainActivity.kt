@@ -1,7 +1,9 @@
 package com.calllog.app.ui
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -10,7 +12,11 @@ import androidx.core.content.ContextCompat
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import com.calllog.app.R
+import com.calllog.app.data.local.SecureStorage
 import com.calllog.app.databinding.ActivityMainBinding
+import com.calllog.app.service.CallLogService
+import android.view.LayoutInflater
+import android.view.View
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class MainActivity : AppCompatActivity() {
@@ -18,11 +24,15 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
 
     // सगळे required permissions
-    private val requiredPermissions = arrayOf(
+    private val requiredPermissions = mutableListOf(
         Manifest.permission.READ_CALL_LOG,
         Manifest.permission.READ_CONTACTS,
-        Manifest.permission.READ_PHONE_STATE,
-    )
+        Manifest.permission.READ_PHONE_STATE
+    ).apply {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            add(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }.toTypedArray()
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -30,6 +40,10 @@ class MainActivity : AppCompatActivity() {
         val allGranted = permissions.values.all { it }
         if (allGranted) {
             Toast.makeText(this, "Permissions Granted! ✅", Toast.LENGTH_SHORT).show()
+            val storage = SecureStorage(this)
+            if (storage.isLoggedIn()) {
+                CallLogService.start(this)
+            }
         } else {
             showPermissionDeniedDialog()
         }
@@ -57,18 +71,31 @@ class MainActivity : AppCompatActivity() {
         }
         if (missing.isNotEmpty()) {
             showPermissionRationaleDialog(missing.toTypedArray())
+        } else {
+            val storage = SecureStorage(this)
+            if (storage.isLoggedIn()) {
+                CallLogService.start(this)
+            }
         }
     }
 
     private fun showPermissionRationaleDialog(permissions: Array<String>) {
-        MaterialAlertDialogBuilder(this)
-            .setTitle("Permissions Required")
-            .setMessage("These permissions are needed to view and securely save your call logs.")
-            .setPositiveButton("Grant") { _, _ ->
-                permissionLauncher.launch(permissions)
-            }
-            .setNegativeButton("Later") { dialog, _ -> dialog.dismiss() }
-            .show()
+        val view = LayoutInflater.from(this).inflate(R.layout.dialog_permission_rationale, null)
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setView(view)
+            .setCancelable(false)
+            .create()
+
+        view.findViewById<View>(R.id.btn_rationale_grant).setOnClickListener {
+            dialog.dismiss()
+            permissionLauncher.launch(permissions)
+        }
+
+        view.findViewById<View>(R.id.btn_rationale_later).setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
     private fun showPermissionDeniedDialog() {
@@ -76,7 +103,10 @@ class MainActivity : AppCompatActivity() {
             .setTitle("Permissions Denied")
             .setMessage("The app cannot display call logs without permissions. Please enable them in Settings.")
             .setPositiveButton("Settings") { _, _ ->
-                // TODO: Add intent to open app settings
+                val intent = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = android.net.Uri.fromParts("package", packageName, null)
+                }
+                startActivity(intent)
             }
             .setNegativeButton("OK") { dialog, _ -> dialog.dismiss() }
             .show()

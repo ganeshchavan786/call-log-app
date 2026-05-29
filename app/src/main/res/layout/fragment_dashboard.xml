@@ -1,16 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="?attr/colorSurface">
+    android:layout_height="match_parent">
 
-    <LinearLayout
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scroll_dashboard"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:layout_height="match_parent"
+        android:background="?attr/colorSurface">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
 
         <!-- Header -->
         <LinearLayout
@@ -529,3 +534,75 @@
     </LinearLayout>
 
 </androidx.core.widget.NestedScrollView>
+
+<!-- Overlay block UI -->
+<LinearLayout
+    android:id="@+id/layout_subscription_expired"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#E6F8F8F6"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:clickable="true"
+    android:focusable="true"
+    android:padding="24dp"
+    android:visibility="gone">
+
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cardCornerRadius="24dp"
+        app:cardElevation="4dp"
+        app:strokeColor="#E24B4A"
+        app:strokeWidth="1.5dp"
+        app:cardBackgroundColor="#FFFFFF">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="28dp">
+
+            <ImageView
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:src="@drawable/ic_call_rejected"
+                app:tint="#E24B4A"
+                android:layout_marginBottom="20dp"
+                android:contentDescription="Expired Icon"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Subscription Expired"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="#2C2C2A"
+                android:layout_marginBottom="10dp"
+                android:gravity="center"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Your 7-day free trial or subscription has expired.\nPlease buy/renew the Enterprise Plan to continue using the service."
+                android:textSize="13sp"
+                android:textColor="#5F5E5A"
+                android:lineSpacingMultiplier="1.2"
+                android:gravity="center"
+                android:layout_marginBottom="24dp"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_retry_expired_sync"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Check Status"
+                app:cornerRadius="12dp"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="?attr/colorPrimary"/>
+
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+</LinearLayout>
+
+</FrameLayout>

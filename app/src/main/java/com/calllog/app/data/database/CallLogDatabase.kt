@@ -15,7 +15,7 @@ import com.calllog.app.data.model.SimInfo
  */
 @Database(
     entities = [CallLog::class, SimInfo::class],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 @TypeConverters(Converters::class)

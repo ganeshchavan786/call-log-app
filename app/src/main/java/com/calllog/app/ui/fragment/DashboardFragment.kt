@@ -13,6 +13,11 @@ import androidx.work.*
 import com.calllog.app.databinding.FragmentDashboardBinding
 import com.calllog.app.ui.adapter.CallLogAdapter
 import com.calllog.app.ui.viewmodel.CallLogViewModel
+import com.calllog.app.ui.viewmodel.SimViewModel
+import com.calllog.app.data.model.SimInfo
+import com.calllog.app.data.local.SecureStorage
+import android.graphics.Color
+import android.content.res.ColorStateList
 import com.calllog.app.worker.CallLogSyncWorker
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
@@ -23,6 +28,7 @@ class DashboardFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val viewModel: CallLogViewModel by viewModels()
+    private val simViewModel: SimViewModel by viewModels()
     private lateinit var recentAdapter: CallLogAdapter
 
     // Local state — coroutines update these, then updateBreakdown() reads them
@@ -44,6 +50,74 @@ class DashboardFragment : Fragment() {
         setupRecentCallsList()
         observeDashboardData()
         setupSyncButton()
+        checkSubscriptionStatus()
+    }
+
+    private fun checkSubscriptionStatus() {
+        val storage = com.calllog.app.data.local.SecureStorage(requireContext())
+        val isExpired = storage.isSubscriptionExpired()
+        
+        if (isExpired) {
+            binding.layoutSubscriptionExpired.visibility = View.VISIBLE
+            binding.btnSyncNow.isEnabled = false
+        } else {
+            binding.layoutSubscriptionExpired.visibility = View.GONE
+            binding.btnSyncNow.isEnabled = true
+        }
+
+        binding.btnRetryExpiredSync.setOnClickListener {
+            binding.btnRetryExpiredSync.isEnabled = false
+            binding.btnRetryExpiredSync.text = "Checking..."
+            
+            val request = OneTimeWorkRequestBuilder<CallLogSyncWorker>()
+                .setInitialDelay(0, TimeUnit.SECONDS)
+                .setInputData(
+                    androidx.work.workDataOf(CallLogSyncWorker.KEY_IS_MANUAL to true)
+                )
+                .addTag("manual_sync")
+                .build()
+
+            val workManager = WorkManager.getInstance(requireContext())
+            workManager.enqueueUniqueWork(
+                "manual_call_log_sync",
+                ExistingWorkPolicy.REPLACE,
+                request
+            )
+
+            workManager.getWorkInfoByIdLiveData(request.id)
+                .observe(viewLifecycleOwner) { workInfo ->
+                    if (workInfo == null) return@observe
+
+                    when (workInfo.state) {
+                        WorkInfo.State.SUCCEEDED -> {
+                            binding.btnRetryExpiredSync.isEnabled = true
+                            binding.btnRetryExpiredSync.text = "Check Status"
+                            Toast.makeText(requireContext(), "✅ Subscription Active! Unlocked.", Toast.LENGTH_SHORT).show()
+                            checkSubscriptionStatus()
+                        }
+                        WorkInfo.State.FAILED -> {
+                            binding.btnRetryExpiredSync.isEnabled = true
+                            binding.btnRetryExpiredSync.text = "Check Status"
+                            
+                            val output = workInfo.outputData
+                            val status = output.getString(CallLogSyncWorker.KEY_STATUS) ?: "error"
+                            val message = output.getString(CallLogSyncWorker.KEY_MESSAGE) ?: "Subscription expired."
+                            
+                            if (status == "subscription_expired") {
+                                Toast.makeText(requireContext(), "❌ Renewal Required: Trial/Subscription is still expired.", Toast.LENGTH_LONG).show()
+                            } else {
+                                Toast.makeText(requireContext(), "❌ Verification Failed: $message", Toast.LENGTH_LONG).show()
+                            }
+                            checkSubscriptionStatus()
+                        }
+                        WorkInfo.State.CANCELLED -> {
+                            binding.btnRetryExpiredSync.isEnabled = true
+                            binding.btnRetryExpiredSync.text = "Check Status"
+                        }
+                        else -> { /* RUNNING, ENQUEUED */ }
+                    }
+                }
+        }
     }
 
     private fun setupRecentCallsList() {
@@ -103,6 +177,7 @@ class DashboardFragment : Fragment() {
                     recentAdapter.submitList(calls)
                 }
             }
+
         }
     }
 
@@ -191,6 +266,8 @@ class DashboardFragment : Fragment() {
                             val status  = output.getString(CallLogSyncWorker.KEY_STATUS) ?: "success"
                             val synced  = output.getInt(CallLogSyncWorker.KEY_SYNCED, 0)
 
+                            checkSubscriptionStatus()
+
                             val toastMsg = when (status) {
                                 "up_to_date" -> "✅ Already up to date"
                                 "success"    -> "✅ Synced $synced records"
@@ -204,6 +281,8 @@ class DashboardFragment : Fragment() {
                             val output  = workInfo.outputData
                             val status  = output.getString(CallLogSyncWorker.KEY_STATUS) ?: "error"
                             val message = output.getString(CallLogSyncWorker.KEY_MESSAGE)
+
+                            checkSubscriptionStatus()
 
                             val toastMsg = when (status) {
                                 "server_down" ->
@@ -227,6 +306,8 @@ class DashboardFragment : Fragment() {
                 }
         }
     }
+
+
 
     override fun onDestroyView() {
         super.onDestroyView()

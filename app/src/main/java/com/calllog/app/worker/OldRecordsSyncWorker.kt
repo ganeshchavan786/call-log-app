@@ -53,8 +53,11 @@ class OldRecordsSyncWorker(
             val BATCH_SIZE = 200  // Background मध्ये smaller batch — server friendly
             var totalSynced = 0
 
-            val sim1 = oldCalls.filter { it.simSlot == 0 }
-            val sim2 = oldCalls.filter { it.simSlot == 1 }
+            val isSim1Reg = storage.isSim1Registered()
+            val isSim2Reg = storage.isSim2Registered()
+
+            val sim1 = if (isSim1Reg) oldCalls.filter { it.simSlot == 0 } else emptyList()
+            val sim2 = if (isSim2Reg) oldCalls.filter { it.simSlot == 1 } else emptyList()
 
             if (sim1.isNotEmpty()) totalSynced += syncOldCalls("SIM_1", sim1, token, BATCH_SIZE)
             if (sim2.isNotEmpty()) totalSynced += syncOldCalls("SIM_2", sim2, token, BATCH_SIZE)
@@ -158,7 +161,7 @@ class OldRecordsSyncWorker(
                     callType    = callType,
                     duration    = it.getLong(durIdx),
                     callDate    = it.getLong(dateIdx),
-                    simSlot     = if (it.getString(simIdx)?.contains("2") == true) 1 else 0
+                    simSlot     = com.calllog.app.util.SimDetailsManager.getSimSlotFromAccountId(applicationContext, it.getString(simIdx))
                 ))
             }
         }

@@ -104,6 +104,10 @@ class SecureStorage(context: Context) {
     // ── Auth Check ────────────────────────────────────────────────────────────
     fun isLoggedIn(): Boolean = getToken() != null
 
+    // ── Subscription Expiry ───────────────────────────────────────────────────
+    fun saveSubscriptionExpired(expired: Boolean) = prefs.edit().putBoolean("sub_expired", expired).apply()
+    fun isSubscriptionExpired(): Boolean = prefs.getBoolean("sub_expired", false)
+
     // ── Logout ────────────────────────────────────────────────────────────────
     fun clearAll() = prefs.edit().clear().apply()
 }

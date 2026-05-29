@@ -11,14 +11,16 @@ import com.calllog.app.R
 import com.calllog.app.ui.MainActivity
 
 /**
- * NotificationHelper — Manages missed call reminders and daily summary notifications.
+ * NotificationHelper — Manages missed call reminders, daily summary, and foreground service notifications.
  */
 object NotificationHelper {
 
     private const val CHANNEL_ID_MISSED   = "missed_call_channel"
     private const val CHANNEL_ID_SUMMARY  = "daily_summary_channel"
+    private const val CHANNEL_ID_SERVICE  = "call_log_service_channel"
     private const val NOTIF_ID_MISSED     = 1001
     private const val NOTIF_ID_SUMMARY    = 1002
+    const val NOTIF_ID_SERVICE            = 1003
 
     // ============================
     // Channel setup — Call once during App start
@@ -44,6 +46,16 @@ object NotificationHelper {
                 NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
                 description = "Summary of calls for the day"
+                manager.createNotificationChannel(this)
+            }
+
+            // Service channel
+            NotificationChannel(
+                CHANNEL_ID_SERVICE,
+                "Call Log Tracking Service",
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "Runs in the background to sync calls in real-time"
                 manager.createNotificationChannel(this)
             }
         }
@@ -107,5 +119,26 @@ object NotificationHelper {
 
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         manager.notify(NOTIF_ID_SUMMARY, notification)
+    }
+
+    // ============================
+    // Foreground Service Notification
+    // ============================
+    fun getServiceNotification(context: Context): android.app.Notification {
+        val intent = Intent(context, MainActivity::class.java)
+        val pendingIntent = PendingIntent.getActivity(
+            context, 0, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        return NotificationCompat.Builder(context, CHANNEL_ID_SERVICE)
+            .setSmallIcon(R.drawable.ic_call_log)
+            .setContentTitle("Smart Call Log Service")
+            .setContentText("Tracking and syncing call logs in real-time")
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
+            .setContentIntent(pendingIntent)
+            .setOngoing(true)
+            .build()
     }
 }

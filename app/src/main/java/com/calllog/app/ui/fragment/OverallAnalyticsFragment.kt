@@ -43,7 +43,12 @@ class OverallAnalyticsFragment : Fragment() {
     }
 
     private fun setupCardClicks() {
-        binding.cardTotal.setOnClickListener    { showCallsBottomSheet(null, "All Calls", R.drawable.ic_phone, R.color.purple_600) }
+        binding.cardTotal.setOnClickListener {
+            val bundle = Bundle().apply {
+                putString("date_range", viewModel.dateRange.value.name)
+            }
+            findNavController().navigate(R.id.action_overallAnalytics_to_employeeSummary, bundle)
+        }
         binding.cardIncoming.setOnClickListener { showCallsBottomSheet(CallType.INCOMING, "Incoming Calls", R.drawable.ic_call_incoming, R.color.color_incoming) }
         binding.cardOutgoing.setOnClickListener { showCallsBottomSheet(CallType.OUTGOING, "Outgoing Calls", R.drawable.ic_call_outgoing, R.color.color_outgoing) }
         binding.cardMissed.setOnClickListener   { showCallsBottomSheet(CallType.MISSED,   "Missed Calls",   R.drawable.ic_call_missed,   R.color.color_missed) }

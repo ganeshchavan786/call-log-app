@@ -15,43 +15,84 @@ import java.util.concurrent.TimeUnit
  */
 class CallReceiver : BroadcastReceiver() {
 
-    private var lastState      = TelephonyManager.EXTRA_STATE_IDLE
-    private var incomingNumber = ""
-    private var isMissed       = false
-
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action != TelephonyManager.ACTION_PHONE_STATE_CHANGED) return
+        val action = intent.action ?: return
 
-        val state  = intent.getStringExtra(TelephonyManager.EXTRA_STATE) ?: return
-        val number = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER) ?: ""
+        // Outgoing call starts
+        if (action == Intent.ACTION_NEW_OUTGOING_CALL) {
+            val number = intent.getStringExtra(Intent.EXTRA_PHONE_NUMBER) ?: ""
+            if (number.isNotEmpty()) {
+                currentNumber = number
+                isIncoming = false
 
-        Timber.d("Phone state changed: $state | number: ${maskNumber(number)}")
-
-        when (state) {
-            TelephonyManager.EXTRA_STATE_RINGING -> {
-                Timber.d("Incoming call ringing — ${maskNumber(number)}")
-                incomingNumber = number
-                isMissed       = true
-                lastState      = TelephonyManager.EXTRA_STATE_RINGING
-            }
-            TelephonyManager.EXTRA_STATE_OFFHOOK -> {
-                Timber.d("Call answered / outgoing call started")
-                isMissed  = false
-                lastState = TelephonyManager.EXTRA_STATE_OFFHOOK
-            }
-            TelephonyManager.EXTRA_STATE_IDLE -> {
-                Timber.d("Call ended — lastState: $lastState, isMissed: $isMissed")
-                if (lastState == TelephonyManager.EXTRA_STATE_RINGING && isMissed) {
-                    Timber.i("Missed call detected — ${maskNumber(incomingNumber)}")
-                    NotificationHelper.showMissedCallNotification(
-                        context,
-                        callerName   = "Unknown",
-                        callerNumber = incomingNumber
-                    )
+                val subId = intent.getIntExtra("subscription", -1)
+                resolvedSlot = if (subId != -1) {
+                    com.calllog.app.util.SimDetailsManager.getSimSlotFromAccountId(context, subId.toString())
+                } else {
+                    0
                 }
-                scheduleSyncWork(context)
-                lastState = TelephonyManager.EXTRA_STATE_IDLE
-                isMissed  = false
+
+                Timber.d("Outgoing call initialized to: ${maskNumber(number)} on SIM Slot: $resolvedSlot")
+
+                if (android.provider.Settings.canDrawOverlays(context)) {
+                    com.calllog.app.service.CallOverlayService.show(context, number, false, resolvedSlot)
+                }
+            }
+            return
+        }
+
+        if (action == TelephonyManager.ACTION_PHONE_STATE_CHANGED) {
+            val state = intent.getStringExtra(TelephonyManager.EXTRA_STATE) ?: return
+            val subId = intent.getIntExtra("subscription", -1)
+            if (subId != -1) {
+                resolvedSlot = com.calllog.app.util.SimDetailsManager.getSimSlotFromAccountId(context, subId.toString())
+            }
+
+            Timber.d("Phone state changed: $state | subId: $subId -> resolvedSlot: $resolvedSlot")
+
+            when (state) {
+                TelephonyManager.EXTRA_STATE_RINGING -> {
+                    val number = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER) ?: ""
+                    if (number.isNotEmpty()) {
+                        currentNumber = number
+                    }
+                    isIncoming = true
+                    lastState = TelephonyManager.EXTRA_STATE_RINGING
+                    Timber.d("Incoming call ringing — ${maskNumber(currentNumber)}")
+
+                    if (android.provider.Settings.canDrawOverlays(context) && currentNumber.isNotEmpty()) {
+                        com.calllog.app.service.CallOverlayService.show(context, currentNumber, true, resolvedSlot)
+                    }
+                }
+                TelephonyManager.EXTRA_STATE_OFFHOOK -> {
+                    Timber.d("Call answered / outgoing call started")
+                    if (!isIncoming && currentNumber.isNotEmpty()) {
+                        if (android.provider.Settings.canDrawOverlays(context)) {
+                            com.calllog.app.service.CallOverlayService.show(context, currentNumber, false, resolvedSlot)
+                        }
+                    }
+                    lastState = TelephonyManager.EXTRA_STATE_OFFHOOK
+                }
+                TelephonyManager.EXTRA_STATE_IDLE -> {
+                    Timber.d("Call ended — lastState: $lastState, currentNumber: ${maskNumber(currentNumber)}")
+                    
+                    com.calllog.app.service.CallOverlayService.hide(context)
+
+                    if (lastState == TelephonyManager.EXTRA_STATE_RINGING && isIncoming && currentNumber.isNotEmpty()) {
+                        Timber.i("Missed call detected — ${maskNumber(currentNumber)}")
+                        NotificationHelper.showMissedCallNotification(
+                            context,
+                            callerName = "Unknown",
+                            callerNumber = currentNumber
+                        )
+                    }
+                    scheduleSyncWork(context)
+                    
+                    lastState = TelephonyManager.EXTRA_STATE_IDLE
+                    currentNumber = ""
+                    isIncoming = false
+                    resolvedSlot = 0
+                }
             }
         }
     }
@@ -59,10 +100,10 @@ class CallReceiver : BroadcastReceiver() {
     private fun scheduleSyncWork(context: Context) {
         Timber.d("Scheduling sync after call ended...")
         val request = OneTimeWorkRequestBuilder<CallLogSyncWorker>()
-            .setInitialDelay(3, TimeUnit.SECONDS)
+            .setInitialDelay(1, TimeUnit.SECONDS)
             .setConstraints(
                 Constraints.Builder()
-                    .setRequiredNetworkType(NetworkType.NOT_REQUIRED)
+                    .setRequiredNetworkType(NetworkType.CONNECTED)
                     .build()
             )
             .addTag("call_log_sync")
@@ -73,12 +114,15 @@ class CallReceiver : BroadcastReceiver() {
         )
     }
 
-    /**
-     * Privacy साठी phone number mask करतो — log मध्ये full number दिसणार नाही.
-     * उदा: 9876543210 → 98****3210
-     */
-    private fun maskNumber(number: String): String {
-        if (number.length < 5) return "****"
-        return "${number.take(2)}****${number.takeLast(4)}"
+    companion object {
+        private var lastState = TelephonyManager.EXTRA_STATE_IDLE
+        private var currentNumber = ""
+        private var isIncoming = false
+        private var resolvedSlot = 0
+
+        private fun maskNumber(number: String): String {
+            if (number.length < 5) return "****"
+            return "${number.take(2)}****${number.takeLast(4)}"
+        }
     }
 }

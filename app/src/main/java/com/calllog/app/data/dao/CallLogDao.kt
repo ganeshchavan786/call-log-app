@@ -84,6 +84,10 @@ interface CallLogDao {
     @Query("SELECT COALESCE(SUM(duration), 0) FROM call_logs WHERE callType = 'OUTGOING' AND callDate BETWEEN :from AND :to")
     suspend fun getOutgoingDurationInRange(from: Long, to: Long): Long
 
+    // Retrieve active calls after a specific timestamp
+    @Query("SELECT * FROM call_logs WHERE isDeletedFromPhone = 0 AND callDate > :timestamp")
+    suspend fun getActiveCallsAfter(timestamp: Long): List<CallLog>
+
     // Mark a call log entry as deleted from the phone
     @Query("UPDATE call_logs SET isDeletedFromPhone = 1 WHERE phoneNumber = :number AND callDate = :date")
     suspend fun markAsDeletedFromPhone(number: String, date: Long)

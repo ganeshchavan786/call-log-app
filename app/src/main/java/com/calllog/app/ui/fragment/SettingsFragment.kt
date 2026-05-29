@@ -1,9 +1,12 @@
 package com.calllog.app.ui.fragment
 
+import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
 import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
@@ -26,6 +29,9 @@ import com.calllog.app.ui.LoginActivity
 import com.calllog.app.ui.viewmodel.SimViewModel
 import com.google.android.material.card.MaterialCardView
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import com.calllog.app.data.database.CallLogDatabase
+import com.calllog.app.service.CallLogService
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -46,6 +52,7 @@ class SettingsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         setupDarkMode()
         setupSimSection()
+        setupSystemSettings()
         setupSyncHistory()
         setupSignOut()
         setupAppVersion()
@@ -55,6 +62,8 @@ class SettingsFragment : Fragment() {
         super.onResume()
         // Settings screen वर परत आल्यावर sync summary refresh करतो
         refreshSyncSummary()
+        refreshBatteryOptimizationStatus()
+        refreshOverlayStatus()
     }
 
     // ── Dark Mode ─────────────────────────────────────────────────────────────
@@ -253,8 +262,25 @@ class SettingsFragment : Fragment() {
                 .setTitle("Sign Out")
                 .setMessage("Are you sure you want to sign out?")
                 .setPositiveButton("Sign Out") { _, _ ->
+                    // Service stop करतो
+                    try {
+                        CallLogService.stop(requireContext())
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+
+                    // Room Database clear करतो
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        try {
+                            CallLogDatabase.getDatabase(requireContext().applicationContext).clearAllTables()
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+
                     // Token + data clear करतो
                     SecureStorage(requireContext()).clearAll()
+
                     // Login screen वर navigate करतो
                     val intent = Intent(requireContext(), LoginActivity::class.java)
                     intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -387,6 +413,170 @@ class SettingsFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    // ── System Settings ──────────────────────────────────────────────────────
+    private fun setupSystemSettings() {
+        refreshBatteryOptimizationStatus()
+        refreshOverlayStatus()
+
+        binding.cardBatteryOptimization.setOnClickListener {
+            requestBatteryOptimizationExemption()
+        }
+
+        binding.cardAutostartSettings.setOnClickListener {
+            openAutostartSettings()
+        }
+
+        binding.cardOverlayPermission.setOnClickListener {
+            requestOverlayPermission()
+        }
+    }
+
+    private fun refreshOverlayStatus() {
+        if (_binding == null) return
+        val context = requireContext()
+        val hasOverlay = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            Settings.canDrawOverlays(context)
+        } else {
+            true
+        }
+
+        if (hasOverlay) {
+            binding.tvOverlayStatus.text = "🟢 Active (Call popup will show)"
+            binding.tvOverlayStatus.setTextColor(Color.parseColor("#4CAF50"))
+        } else {
+            binding.tvOverlayStatus.text = "🔴 Disabled (Tap to enable)"
+            binding.tvOverlayStatus.setTextColor(Color.parseColor("#F44336"))
+        }
+    }
+
+    private fun requestOverlayPermission() {
+        val context = requireContext()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (Settings.canDrawOverlays(context)) {
+                Toast.makeText(context, "Overlay permission is already granted! ✅", Toast.LENGTH_SHORT).show()
+                return
+            }
+            try {
+                val intent = Intent(
+                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    Uri.parse("package:${context.packageName}")
+                )
+                startActivity(intent)
+            } catch (e: Exception) {
+                try {
+                    val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
+                    startActivity(intent)
+                } catch (ex: Exception) {
+                    Toast.makeText(context, "Failed to open settings: ${ex.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        } else {
+            Toast.makeText(context, "Overlay permission is not required on this Android version.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun refreshBatteryOptimizationStatus() {
+        if (_binding == null) return
+        val context = requireContext()
+        val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+        val isIgnoring = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            pm.isIgnoringBatteryOptimizations(context.packageName)
+        } else {
+            true
+        }
+
+        if (isIgnoring) {
+            binding.tvBatteryStatus.text = "🟢 Active (Unrestricted)"
+            binding.tvBatteryStatus.setTextColor(Color.parseColor("#4CAF50"))
+        } else {
+            binding.tvBatteryStatus.text = "🔴 Restricted (Tap to disable optimization)"
+            binding.tvBatteryStatus.setTextColor(Color.parseColor("#F44336"))
+        }
+    }
+
+    private fun requestBatteryOptimizationExemption() {
+        try {
+            val context = requireContext()
+            val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+            val isIgnoring = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                pm.isIgnoringBatteryOptimizations(context.packageName)
+            } else {
+                true
+            }
+
+            if (isIgnoring) {
+                Toast.makeText(context, "Battery Optimization is already disabled! ✅", Toast.LENGTH_SHORT).show()
+                return
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                    data = Uri.parse("package:${context.packageName}")
+                }
+                startActivity(intent)
+            } else {
+                val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                startActivity(intent)
+            }
+        } catch (e: Exception) {
+            try {
+                // Fallback to list settings
+                val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                startActivity(intent)
+            } catch (ex: Exception) {
+                Toast.makeText(requireContext(), "Failed to open settings: ${ex.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun openAutostartSettings() {
+        val context = requireContext()
+        val oemIntents = listOf(
+            // Xiaomi
+            Intent().setClassName("com.miui.securitycenter", "com.miui.permcenter.autostart.AutoStartManagementActivity"),
+            // Oppo
+            Intent().setClassName("com.coloros.safecenter", "com.coloros.safecenter.permission.startup.StartupAppListActivity"),
+            Intent().setClassName("com.oppo.safe", "com.oppo.safe.PermissionTopActivity"),
+            // Vivo
+            Intent().setClassName("com.vivo.permissionmanager", "com.vivo.permissionmanager.activity.BgStartUpManagerActivity"),
+            // Realme
+            Intent().setClassName("com.coloros.safecenter", "com.coloros.safecenter.startupapp.StartupAppListActivity"),
+            // Letv
+            Intent().setClassName("com.letv.android.letvsafe", "com.letv.android.letvsafe.AutostartActivity"),
+            // Huawei
+            Intent().setClassName("com.huawei.systemmanager", "com.huawei.systemmanager.optimize.process.ProtectActivity"),
+            // OnePlus
+            Intent().setClassName("com.oneplus.security", "com.oneplus.security.chainlaunch.smartlaunch.SmartLaunchAppListActivity")
+        )
+
+        var launched = false
+        for (intent in oemIntents) {
+            try {
+                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                context.startActivity(intent)
+                launched = true
+                Toast.makeText(context, "Redirecting to Autostart Settings... 🚀", Toast.LENGTH_SHORT).show()
+                break
+            } catch (e: Exception) {
+                // Try next
+            }
+        }
+
+        if (!launched) {
+            // General Application Details fallback
+            try {
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.fromParts("package", context.packageName, null)
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                context.startActivity(intent)
+                Toast.makeText(context, "General settings opened. Please enable autostart if available. ℹ️", Toast.LENGTH_LONG).show()
+            } catch (e: Exception) {
+                Toast.makeText(context, "Could not open system settings.", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 }
 

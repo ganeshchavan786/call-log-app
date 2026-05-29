@@ -15,6 +15,7 @@ import com.calllog.app.data.model.CallType
 import timber.log.Timber
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 class CallLogSyncWorker(
     context: Context,
@@ -36,6 +37,9 @@ class CallLogSyncWorker(
         }
 
         return try {
+            // 0. System call log मधून डिलीट झालेले calls शोधतो (Tampering detection)
+            detectDeletedCalls()
+
             // 1. Local DB मध्ये save करतो
             syncToLocalDb()
 
@@ -44,6 +48,8 @@ class CallLogSyncWorker(
             val result = syncToServer(isManual)
 
             Timber.i("Sync completed: ${result.message}")
+            // Subscription active details update करतो (Unblocks app)
+            storage.saveSubscriptionExpired(false)
             Result.success(workDataOf(
                 KEY_STATUS  to result.status,
                 KEY_MESSAGE to result.message,
@@ -52,6 +58,14 @@ class CallLogSyncWorker(
         } catch (e: Exception) {
             Timber.e(e, "Sync failed: ${e.message}")
             when {
+                // Subscription Expired (HTTP 402)
+                e.message?.contains("SUBSCRIPTION_EXPIRED") == true -> {
+                    storage.saveSubscriptionExpired(true)
+                    Result.failure(workDataOf(
+                        KEY_STATUS  to "subscription_expired",
+                        KEY_MESSAGE to "Your 7-day free trial or subscription has expired. Please renew the Enterprise Plan."
+                    ))
+                }
                 // Token expired — retry नको, user ला re-login सांगतो
                 e.message?.contains("Token expired") == true -> {
                     Result.failure(workDataOf(
@@ -97,8 +111,16 @@ class CallLogSyncWorker(
 
     // ── Local DB Sync ─────────────────────────────────────────────────────────
     private suspend fun syncToLocalDb() {
-        val phoneCalls = readPhoneCallLogs()
-        Timber.d("Phone call log read: ${phoneCalls.size} total records")
+        val isFirstSync = !storage.isFirstSyncDone()
+        
+        val phoneCalls = if (isFirstSync) {
+            readPhoneCallLogs() // Read all
+        } else {
+            val threeDaysAgo = System.currentTimeMillis() - java.util.concurrent.TimeUnit.DAYS.toMillis(3)
+            readPhoneCallLogsAfter(threeDaysAgo)
+        }
+        
+        Timber.d("syncToLocalDb: Phone call log read: ${phoneCalls.size} records")
 
         if (phoneCalls.isEmpty()) return
 
@@ -178,8 +200,32 @@ class CallLogSyncWorker(
 
         Timber.d("Syncing ${callsToSync.size} calls in batches of $BATCH_SIZE (firstSync=$isFirstSync)")
 
-        val sim1Calls = callsToSync.filter { it.simSlot == 0 }
-        val sim2Calls = callsToSync.filter { it.simSlot == 1 }
+        val isSim1Reg = storage.isSim1Registered()
+        val isSim2Reg = storage.isSim2Registered()
+
+        Timber.d("SIM Registration status: SIM 1 registered = $isSim1Reg, SIM 2 registered = $isSim2Reg")
+
+        val sim1Calls = if (isSim1Reg) callsToSync.filter { it.simSlot == 0 } else emptyList()
+        val sim2Calls = if (isSim2Reg) callsToSync.filter { it.simSlot == 1 } else emptyList()
+
+        if (!isSim1Reg && callsToSync.any { it.simSlot == 0 }) {
+            Timber.i("SIM 1 calls skipped because SIM 1 is not registered")
+        }
+        if (!isSim2Reg && callsToSync.any { it.simSlot == 1 }) {
+            Timber.i("SIM 2 calls skipped because SIM 2 is not registered")
+        }
+
+        if (sim1Calls.isEmpty() && sim2Calls.isEmpty()) {
+            Timber.d("No call logs to sync for registered SIM slots")
+            storage.saveLastSyncTime(syncStartedAt)
+            if (isFirstSync) {
+                storage.markFirstSyncDone()
+                scheduleOldRecordsSync()
+            }
+            val msg = "No calls to sync for registered SIMs"
+            storage.addSyncHistoryEntry("${syncStartedAt}|success|0|0|0|${msg}|${syncType}")
+            return SyncResult("success", msg)
+        }
 
         var totalSynced  = 0
         var totalSkipped = 0
@@ -307,11 +353,6 @@ class CallLogSyncWorker(
         totalBatches: Int
     ): Triple<Int, Int, Int> {  // synced, skipped, failed
 
-        if (chunk.size < 50) {
-            Timber.w("$simSlot batch $batchNum: chunk too small (${chunk.size}), skipping")
-            return Triple(0, 0, chunk.size)
-        }
-
         val deviceId = android.provider.Settings.Secure.getString(
             applicationContext.contentResolver,
             android.provider.Settings.Secure.ANDROID_ID
@@ -354,6 +395,10 @@ class CallLogSyncWorker(
                     throw Exception("Token expired — re-login required")
                 }
 
+                response.code() == 402 -> {
+                    throw Exception("SUBSCRIPTION_EXPIRED")
+                }
+
                 response.code() == 413 || response.code() == 408 || response.code() == 504 -> {
                     // Payload too large / Timeout — batch अर्धा करतो
                     Timber.w("$simSlot batch $batchNum: HTTP ${response.code()} — splitting ${chunk.size}")
@@ -365,7 +410,7 @@ class CallLogSyncWorker(
 
                 else -> {
                     // Other server error — skipped म्हणून treat करतो, failed नाही
-                    // Backend upsert असल्यामुळे पुढच्या sync ला retry होईल
+                    // Backend upsert असल्यामुळे पुढच्या sync la retry होईल
                     Timber.w("$simSlot batch $batchNum: HTTP ${response.code()} — treating as skipped")
                     Triple(0, chunk.size, 0)
                 }
@@ -374,20 +419,21 @@ class CallLogSyncWorker(
         } catch (e: Exception) {
             if (e.message?.contains("Token expired") == true) throw e
 
-            Timber.w("$simSlot batch $batchNum: exception — splitting ${chunk.size}")
+            Timber.w("$simSlot batch $batchNum: exception — splitting ${chunk.size}. Error: ${e.message}")
             return try {
                 val half = chunk.size / 2
                 if (half < 50) {
                     Timber.e("$simSlot: too small after split, skipping ${chunk.size}")
-                    Triple(0, 0, chunk.size)
+                    // THROW the actual exception so we can see the real error!
+                    throw Exception("API Error: ${e.message}")
                 } else {
                     val (s1, sk1, f1) = sendBatchWithFallback(simSlot, chunk.subList(0, half),         token, batchNum, totalBatches)
                     val (s2, sk2, f2) = sendBatchWithFallback(simSlot, chunk.subList(half, chunk.size), token, batchNum, totalBatches)
                     Triple(s1 + s2, sk1 + sk2, f1 + f2)
                 }
             } catch (e2: Exception) {
-                if (e2.message?.contains("Token expired") == true) throw e2
-                Triple(0, 0, chunk.size)
+                Timber.e(e2, "$simSlot batch $batchNum: completely failed after split")
+                throw e2 // Re-throw so the UI shows the real error!
             }
         }
     }
@@ -455,7 +501,7 @@ class CallLogSyncWorker(
                     callType    = callType,
                     duration    = it.getLong(durationIndex),
                     callDate    = it.getLong(dateIndex),
-                    simSlot     = if (it.getString(simIndex)?.contains("2") == true) 1 else 0
+                    simSlot     = com.calllog.app.util.SimDetailsManager.getSimSlotFromAccountId(applicationContext, it.getString(simIndex))
                 ))
             }
         }
@@ -468,5 +514,51 @@ class CallLogSyncWorker(
         val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
         sdf.timeZone = TimeZone.getTimeZone("UTC")
         return sdf.format(Date(timestamp))
+    }
+
+    private suspend fun detectDeletedCalls() {
+        try {
+            // Check last 14 days
+            val fourteenDaysAgo = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(14)
+            
+            // Get active (not marked as deleted) calls from local database
+            val activeLocalCalls = dao.getActiveCallsAfter(fourteenDaysAgo)
+            if (activeLocalCalls.isEmpty()) {
+                Timber.d("No active local calls in the last 14 days to check for deletion.")
+                return
+            }
+
+            // Get current calls present in the phone call log
+            val systemCalls = readPhoneCallLogsAfter(fourteenDaysAgo)
+            
+            // Map system calls to a set of unique identifiers (phoneNumber_callDate)
+            val systemCallIds = systemCalls.map { "${it.phoneNumber}_${it.callDate}" }.toSet()
+
+            var deletedCount = 0
+            for (localCall in activeLocalCalls) {
+                val key = "${localCall.phoneNumber}_${localCall.callDate}"
+                if (!systemCallIds.contains(key)) {
+                    // This call is in our DB but no longer in the phone call log -> deleted!
+                    dao.markAsDeletedFromPhone(localCall.phoneNumber, localCall.callDate)
+                    deletedCount++
+                    
+                    // Alert via Timber warning (which goes to Grafana Loki)
+                    Timber.w("CALL_TAMPERED: Log deleted from device! Number: ${maskNumber(localCall.phoneNumber)}, Date: ${Date(localCall.callDate)}")
+                }
+            }
+
+            if (deletedCount > 0) {
+                Timber.w("Call Deletion Detected: $deletedCount call logs were deleted from the device history in the last 14 days.")
+            } else {
+                Timber.d("Call deletion check completed: No logs deleted.")
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Error during call deletion detection")
+        }
+    }
+
+    private fun maskNumber(number: String): String {
+        if (number.length < 5) return "****"
+        return "${number.take(2)}****${number.takeLast(4)}"
     }
 }

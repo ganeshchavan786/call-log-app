@@ -28,6 +28,11 @@ class CallLogApplication : Application() {
             else androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO
         )
 
+        // Note: CallLogService should not be started from Application.onCreate()
+        // because starting a Foreground Service from the background on Android 12+
+        // throws ForegroundServiceStartNotAllowedException and crashes the app.
+        // It is safely started from MainActivity and BootReceiver.
+
         // App start झाल्यावर लगेच एकदा sync
         scheduleImmediateSync()
 
